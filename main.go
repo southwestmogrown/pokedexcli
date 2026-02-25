@@ -1,6 +1,7 @@
 package main
 
-func main() {
-	repl()	
-}
+import replpkg "github.com/southwestmogrown/pokedexcli/repl"
 
+func main() {
+	replpkg.Repl()
+}
