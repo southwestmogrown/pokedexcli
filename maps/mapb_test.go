@@ -39,9 +39,11 @@ func TestMapBUsesPrevious(t *testing.T) {
         calls++
         switch calls {
         case 1:
-            fmt.Fprintln(w, makePayloadB(""))
-        case 2:
+            // first call returns a previous link so mapb can walk backward
             fmt.Fprintln(w, makePayloadB(ts.URL+"/page1"))
+        case 2:
+            // second call returns no previous
+            fmt.Fprintln(w, makePayloadB(""))
         default:
             fmt.Fprintln(w, makePayloadB(""))
         }
@@ -50,23 +52,63 @@ func TestMapBUsesPrevious(t *testing.T) {
 
     baseURLB = ts.URL + "/page2"
     ResetB()
+    resetRequestCache()
 
     out := captureOutputB(func() {
         if err := MapB(); err != nil {
             t.Fatalf("first call failed: %v", err)
         }
     })
+    // the first invocation should fall back to baseURLB and therefore
+    // include our decorative beginning message.
+    if !strings.Contains(out, "*** REACHED BEGINNING ***") {
+        t.Errorf("missing beginning log: %s", out)
+    }
     if !strings.Contains(strings.TrimSpace(out), "bar") {
         t.Errorf("output missing name: %s", out)
     }
-    if currentURLB != "" {
-        t.Errorf("expected currentURLB empty after first call, got %q", currentURLB)
+    if !strings.Contains(out, "*** PAGE COMPLETE ***") {
+        t.Errorf("missing completion flair: %s", out)
+    }
+    // currentURL should now record the URL we just fetched (base page)
+    if currentURL != ts.URL+"/page2" {
+        t.Errorf("expected currentURL to be base page after first call, got %q", currentURL)
     }
 
-    if err := MapB(); err != nil {
-        t.Fatalf("second call failed: %v", err)
+    // clear cache so the second request hits the server again
+    resetRequestCache()
+
+    out2 := captureOutputB(func() {
+        if err := MapB(); err != nil {
+            t.Fatalf("second call failed: %v", err)
+        }
+    })
+    // since the previous value from the *first* payload pointed to page1, the
+    // second call should follow that link rather than print the beginning
+    // message.  (The empty previous in the second payload will only be seen
+    // on the *next* invocation.)
+    if strings.Contains(out2, "*** REACHED BEGINNING ***") {
+        t.Errorf("unexpected beginning log on second call: %s", out2)
     }
-    if currentURLB != ts.URL+"/page1" {
-        t.Errorf("expected currentURLB=%q, got %q", ts.URL+"/page1", currentURLB)
+    if currentURL != ts.URL+"/page1" {
+        t.Errorf("expected currentURL=%q, got %q", ts.URL+"/page1", currentURL)
+    }
+
+    // perform a third call; now currentLocations.Previous is empty, so we
+    // should see the fallback log and hit baseURLB again.
+    resetRequestCache()
+    out3 := captureOutputB(func() {
+        if err := MapB(); err != nil {
+            t.Fatalf("third call failed: %v", err)
+        }
+    })
+    if !strings.Contains(out3, "*** REACHED BEGINNING ***") {
+        t.Errorf("expected beginning log on third call: %s", out3)
+    }
+    if !strings.Contains(out3, "*** PAGE COMPLETE ***") {
+        t.Errorf("missing completion flair on third call: %s", out3)
+    }
+    if currentURL != ts.URL+"/page2" {
+        t.Errorf("expected currentURL back at base, got %q", currentURL)
     }
 }

@@ -1,50 +1,80 @@
 package maps
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
-	"net/http"
 )
 
+// baseURLB parallels baseURL in map.go and may be overridden in tests.
 var baseURLB = "https://pokeapi.co/api/v2/location-area"
-var currentURLB string
-var currentLocationsB PokeLocations
+
+// the package-level requestCache from map.go is reused for MapB;
+// resetRequestCache defined there is also used by MapB tests.
+
+// nothing to define here
 
 // MapB behaves similarly to Map but follows the "previous" link in the
 // response instead of "next". When there is no previous value the
 // state is reset so a subsequent call starts at baseURLB again.
 func MapB() error {
-    if currentURLB == "" {
-        currentURLB = baseURLB
+    // choose the URL that corresponds to the previous page of whatever we
+    // last loaded.  If we've never loaded anything yet (empty
+    // currentLocations) or the previous field is empty, start at baseURLB.
+    var url string
+    beginReached := false
+    if prev, ok := currentLocations.Previous.(string); ok && prev != "" {
+        url = prev
+    } else {
+        beginReached = true
+        url = baseURLB
     }
 
-    res, err := http.Get(currentURLB)
+    // pre-check cache similar to Map
+    cacheHit := false
+    if _, ok := requestCache.Get(url); ok {
+        cacheHit = true
+    }
+
+    body, err := fetchURL(url)
     if err != nil {
         fmt.Println(err)
         return err
     }
-    defer res.Body.Close()
-
-    decoder := json.NewDecoder(res.Body)
-    if err := decoder.Decode(&currentLocationsB); err != nil {
+    var locs PokeLocations
+    decoder := json.NewDecoder(bytes.NewReader(body))
+    if err := decoder.Decode(&locs); err != nil {
         return err
     }
 
-    for _, r := range currentLocationsB.Results {
+    // update shared state so subsequent calls (map or mapb) see it
+    currentLocations = locs
+    // remember where we fetched from; tests rely on this value
+    currentURL = url
+    lastFetchedURL = url
+
+    for _, r := range currentLocations.Results {
         fmt.Println(r.Name)
     }
 
-    if prev, ok := currentLocationsB.Previous.(string); ok && prev != "" {
-        currentURLB = prev
-    } else {
-        currentURLB = ""
+    if cacheHit {
+        fmt.Println("*** CACHE HIT ***")
     }
+    if beginReached {
+        fmt.Println("*** REACHED BEGINNING ***")
+    }
+
+    // matching flair for backwards pagination
+    fmt.Println("*** PAGE COMPLETE ***")
 
     return nil
 }
 
-// ResetB clears the internal state used by MapB.
+// ResetB is a thin wrapper around Reset so tests can continue to
+// call the old function name if desired. It resets shared map state.
 func ResetB() {
-    currentURLB = ""
-    currentLocationsB = PokeLocations{}
+    Reset()
 }
+
+// fetchURL is implemented in map.go and available here via package
+// scope; no duplicate definition needed.

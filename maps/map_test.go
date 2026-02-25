@@ -48,6 +48,7 @@ func TestMapPagination(t *testing.T) {
 
     baseURL = ts.URL + "/page1"
     Reset()
+    resetRequestCache()
     if interactionManager.InteractionCount != 0 {
         t.Fatalf("reset left interactions: %d", interactionManager.InteractionCount)
     }
@@ -69,7 +70,12 @@ func TestMapPagination(t *testing.T) {
     if !strings.Contains(strings.TrimSpace(out), "foo") {
         t.Errorf("output missing name: %s", out)
     }
+    if !strings.Contains(out, "*** PAGE COMPLETE ***") {
+        t.Errorf("missing completion flair: %s", out)
+    }
 
+    // clear cache so new server response is used
+    resetRequestCache()
     if err := Map(); err != nil {
         t.Fatalf("second call failed: %v", err)
     }
@@ -83,13 +89,43 @@ func TestMapPagination(t *testing.T) {
         t.Errorf("second recorded next URL incorrect: %q", interactionManager.Interactions[2].Next)
     }
 
-    if err := Map(); err != nil {
-        t.Fatalf("third call failed: %v", err)
+    // clear again before third call; this call will exercise wrap-around
+    // logging because currentURL should be empty while lastFetchedURL is
+    // non-empty.  Capture its output so we can verify the decorated message.
+    resetRequestCache()
+    out2 := captureOutput(func() {
+        if err := Map(); err != nil {
+            t.Fatalf("third call failed: %v", err)
+        }
+    })
+    if !strings.Contains(out2, "*** WRAPPED TO START ***") {
+        t.Errorf("wrap-around message missing: %s", out2)
+    }
+    if !strings.Contains(out2, "*** PAGE COMPLETE ***") {
+        t.Errorf("missing completion flair on wrap call: %s", out2)
     }
     if currentURL != ts.URL+"/page2" {
         t.Errorf("after resetting, expected to fetch baseURL and then next, got %q", currentURL)
     }
     if interactionManager.InteractionCount != 3 {
         t.Errorf("expected 3 interactions recorded, got %d", interactionManager.InteractionCount)
+    }
+
+    // cache currently contains the payload for page1 (the base URL) from
+    // the previous call.  To make sure Map doesn't advance to the next link
+    // automatically, clear lastFetchedURL before invoking it.  Then set
+    // currentURL to the same page and verify the cache is used.
+    currentURL = ts.URL + "/page1"
+    lastFetchedURL = ""
+    out3 := captureOutput(func() {
+        if err := Map(); err != nil {
+            t.Fatalf("cache call failed: %v", err)
+        }
+    })
+    if !strings.Contains(out3, "*** CACHE HIT ***") {
+        t.Errorf("expected cache hit on repeated URL, got: %s", out3)
+    }
+    if !strings.Contains(out3, "*** PAGE COMPLETE ***") {
+        t.Errorf("missing completion flair on cache call: %s", out3)
     }
 }
