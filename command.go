@@ -12,6 +12,11 @@ func getCommands() map[string]cliCommand {
 			description: "Displays a help message",
 			callback: commandHelp,
 		},
+		"map": {
+			name: "map",
+			description: "Displays names of 20 location areas in the Pokemon world",
+			callback: commandMap,
+		},
 	}
 }
 
