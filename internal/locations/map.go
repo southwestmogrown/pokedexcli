@@ -82,8 +82,15 @@ func Map() error {
     interactionManager.InteractionCount++
     interactionManager.Interactions[interactionManager.InteractionCount] = currentLocations
 
+    fmt.Println("Exploring location areas...")
+    count := len(currentLocations.Results)
+    if count == 1 {
+        fmt.Println("Found 1 Location Area:")
+    } else {
+        fmt.Printf("Found %d Location Areas:\n", count)
+    }
     for _, r := range currentLocations.Results {
-        fmt.Println(r.Name)
+        fmt.Printf("- %s\n", r.Name)
     }
 
     // report any special conditions at the bottom

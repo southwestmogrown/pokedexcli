@@ -39,8 +39,17 @@ func TestExploreByNameAndCache(t *testing.T) {
         }
     })
 
+    if !strings.Contains(out1, "Exploring forest...") {
+        t.Fatalf("missing explore intro, got: %s", out1)
+    }
+    if !strings.Contains(out1, "Found 2 Pokemon:") {
+        t.Fatalf("missing pokemon header, got: %s", out1)
+    }
     if !strings.Contains(out1, "pikachu") || !strings.Contains(out1, "oddish") {
         t.Fatalf("expected pokemon names in output, got: %s", out1)
+    }
+    if !strings.Contains(out1, "- pikachu") || !strings.Contains(out1, "- oddish") {
+        t.Fatalf("expected pokemon bullet list output, got: %s", out1)
     }
     if strings.Contains(out1, "*** CACHE HIT ***") {
         t.Fatalf("first explore should not be cache hit: %s", out1)
@@ -84,5 +93,14 @@ func TestExploreByID(t *testing.T) {
 
     if !strings.Contains(out, "zubat") {
         t.Fatalf("expected zubat in output, got: %s", out)
+    }
+    if !strings.Contains(out, "Exploring 12...") {
+        t.Fatalf("missing explore intro for id, got: %s", out)
+    }
+    if !strings.Contains(out, "Found 1 Pokemon:") {
+        t.Fatalf("missing pokemon header for id, got: %s", out)
+    }
+    if !strings.Contains(out, "- zubat") {
+        t.Fatalf("expected pokemon bullet list output for id, got: %s", out)
     }
 }

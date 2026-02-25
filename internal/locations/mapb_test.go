@@ -60,6 +60,15 @@ func TestMapBUsesPrevious(t *testing.T) {
     if !strings.Contains(strings.TrimSpace(out), "bar") {
         t.Errorf("output missing name: %s", out)
     }
+    if !strings.Contains(out, "Exploring location areas...") {
+        t.Errorf("missing location intro: %s", out)
+    }
+    if !strings.Contains(out, "Found 1 Location Area:") {
+        t.Errorf("missing location header: %s", out)
+    }
+    if !strings.Contains(out, "- bar") {
+        t.Errorf("missing location bullet entry: %s", out)
+    }
     if !strings.Contains(out, "*** PAGE COMPLETE ***") {
         t.Errorf("missing completion flair: %s", out)
     }

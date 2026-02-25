@@ -43,8 +43,15 @@ func Explore(args []string) error {
         return err
     }
 
+    fmt.Printf("Exploring %s...\n", identifier)
+    count := len(area.PokemonEncounters)
+    if count == 1 {
+        fmt.Println("Found 1 Pokemon:")
+    } else {
+        fmt.Printf("Found %d Pokemon:\n", count)
+    }
     for _, encounter := range area.PokemonEncounters {
-        fmt.Println(encounter.Pokemon.Name)
+        fmt.Printf("- %s\n", encounter.Pokemon.Name)
     }
 
     if cacheHit {
