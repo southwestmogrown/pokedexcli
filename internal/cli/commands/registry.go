@@ -33,5 +33,15 @@ func GetCommands() map[string]Command {
             Description: "Displays Pokemon encountered in a location area by name or ID (usage: explore <location-area-name-or-id>)",
             Callback:    commandExplore,
         },
+        "catch": {
+            Name:        "catch",
+            Description: "Attempts to catch a Pokemon by name or ID (usage: catch <pokemon-name-or-id>)",
+            Callback:    commandCatch,
+        },
+        "inspect": {
+            Name:        "inspect",
+            Description: "Shows details for a caught Pokemon (usage: inspect <pokemon-name>)",
+            Callback:    commandInspect,
+        },
     }
 }

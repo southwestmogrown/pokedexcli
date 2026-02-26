@@ -26,7 +26,7 @@ func captureCommandOutput(f func()) string {
 func TestGetCommandsIncludesAllCommands(t *testing.T) {
     commandMap := GetCommands()
 
-    expected := []string{"help", "exit", "map", "mapb", "explore"}
+    expected := []string{"help", "exit", "map", "mapb", "explore", "catch", "inspect"}
     for _, name := range expected {
         cmd, ok := commandMap[name]
         if !ok {
@@ -55,13 +55,37 @@ func TestHelpCommand(t *testing.T) {
     if !strings.Contains(out, "Available commands:") {
         t.Fatalf("help output missing header: %s", out)
     }
-    for _, name := range []string{"help", "exit", "map", "mapb", "explore"} {
+    for _, name := range []string{"help", "exit", "map", "mapb", "explore", "catch", "inspect"} {
         if !strings.Contains(out, name) {
             t.Fatalf("help output missing %q: %s", name, out)
         }
     }
     if !strings.Contains(out, "explore <location-area-name-or-id>") {
         t.Fatalf("help output missing explore usage example: %s", out)
+    }
+}
+
+func TestCatchCommandRequiresArgument(t *testing.T) {
+    commandMap := GetCommands()
+
+    err := commandMap["catch"].Callback([]string{})
+    if err == nil {
+        t.Fatal("expected catch command to require one argument")
+    }
+    if !strings.Contains(err.Error(), "usage: catch") {
+        t.Fatalf("unexpected catch error: %v", err)
+    }
+}
+
+func TestInspectCommandRequiresArgument(t *testing.T) {
+    commandMap := GetCommands()
+
+    err := commandMap["inspect"].Callback([]string{})
+    if err == nil {
+        t.Fatal("expected inspect command to require one argument")
+    }
+    if !strings.Contains(err.Error(), "usage: inspect") {
+        t.Fatalf("unexpected inspect error: %v", err)
     }
 }
 
