@@ -2,17 +2,16 @@
 
 A terminal-based Pokedex application written in Go.
 
-It provides an interactive REPL for exploring Pokemon location areas using the public PokeAPI location-area endpoint, with in-memory caching and pagination support.
+The app runs an interactive REPL (`Pokedex >`) and supports browsing location areas, exploring encounters, catching Pokemon, inspecting caught Pokemon, and listing your Pokédex.
 
 ## Features
 
 - Interactive CLI prompt (`Pokedex >`)
-- Command registry with argument-aware callbacks
-- Forward pagination through location areas (`map`)
-- Backward pagination (`mapb`)
-- Explore a location area by name or id to list encountered Pokemon (`explore <name-or-id>`)
-- In-memory cache with expiration and background reaper
-- User-friendly footer messages for cache hits and pagination boundaries
+- Forward and backward location pagination (`map`, `mapb`)
+- Location-area exploration by name/id (`explore`)
+- Catch mechanics using Pokemon `base_experience` + `math/rand` (`catch`)
+- Local in-memory Pokédex for caught Pokemon (`inspect`, `pokedex`)
+- Shared HTTP cache with TTL + background reaper
 
 ## Architecture
 
@@ -23,19 +22,19 @@ The project follows a conventional Go CLI layout:
 - `internal/cli`  
   REPL loop and input normalization.
 - `internal/cli/commands`  
-  Command registry + one file per command handler.
+  Command registry and one file per command handler.
 - `internal/locations`  
-  Domain logic for location-area pagination and exploration.
+  Domain logic for map/mapb/explore/catch/inspect/pokedex.
 - `internal/cache`  
-  Thread-safe TTL cache used by location requests.
+  Thread-safe TTL cache used by network-backed location logic.
 
 ### High-level flow
 
 1. `main` starts the REPL.
 2. REPL parses input into command + args.
-3. Command handler delegates to location domain logic.
-4. Location logic fetches data from cache or API.
-5. Results and status messages are printed to the CLI.
+3. Command handler delegates to `internal/locations`.
+4. Domain logic reads cached data or calls PokeAPI when needed.
+5. User-facing output is printed with consistent formatting.
 
 ## Setup
 
@@ -52,8 +51,6 @@ cd pokedex
 
 ## Run
 
-### Start the CLI
-
 ```bash
 go run ./cmd/pokedex
 ```
@@ -64,14 +61,10 @@ You should see:
 Pokedex >
 ```
 
-## Usage
-
-Type `help` in the REPL to see all commands.
-
-### Commands
+## Commands
 
 - `help`  
-  Shows available commands and explore usage.
+  Shows available commands and usage examples.
 - `exit`  
   Exits the CLI.
 - `map`  
@@ -79,29 +72,56 @@ Type `help` in the REPL to see all commands.
 - `mapb`  
   Shows location-area names, moving backward one page per call.
 - `explore <location-area-name-or-id>`  
-  Lists Pokemon names encountered in that location area.
+  Lists Pokemon encountered in that location area.
+- `catch <pokemon-name-or-id>`  
+  Attempts to catch a Pokemon using base-experience catch odds.
+- `inspect <pokemon-name>`  
+  Prints details for a caught Pokemon (no API call; reads local Pokédex).
+- `pokedex`  
+  Lists all caught Pokemon in capture order.
 
-### Example session
+## Example session
 
 ```text
-Pokedex > help
-Pokedex > map
-Pokedex > map
-Pokedex > mapb
-Pokedex > explore canalave-city-area
-Pokedex > explore 1
-Pokedex > exit
+Pokedex > catch pidgey
+Throwing a Pokeball at pidgey...
+pidgey was caught!
+You may now inspect it with the inspect command.
+
+Pokedex > inspect pidgey
+Name: pidgey
+Height: 3
+Weight: 18
+Stats:
+  -hp: 40
+  -attack: 45
+  -defense: 40
+  -special-attack: 35
+  -special-defense: 35
+  -speed: 56
+Types:
+  - normal
+  - flying
+
+Pokedex > pokedex
+Your Pokedex:
+ - pidgey
 ```
 
 ## Output conventions
 
-Location commands print result names first, then optional status footers:
+Location and exploration commands print itemized lists first, followed by optional status footers:
 
 - `*** CACHE HIT ***` when response data is served from cache
 - `*** REACHED END ***` when `map` reaches the last page
-- `*** WRAPPED TO START ***` when `map` starts again from the beginning
+- `*** WRAPPED TO START ***` when `map` wraps back to the first page
 - `*** REACHED BEGINNING ***` when `mapb` cannot go further back
-- `*** PAGE COMPLETE ***` after each command completes
+- `*** PAGE COMPLETE ***` when command output completes
+
+`pokedex` prints:
+
+- `Your Pokedex:` and then each caught pokemon as ` - <name>`
+- `  (empty)` when no Pokemon have been caught yet
 
 ## Testing
 
@@ -122,6 +142,6 @@ go test ./internal/cache/...
 ## Notes for contributors
 
 - Keep command handlers thin: parse/validate args, then delegate to `internal/locations`.
-- Keep API and pagination behavior in domain packages, not in REPL code.
-- Reuse the shared cache layer for network-backed commands.
-- Preserve user-facing output format unless intentionally changing UX.
+- Keep business logic in domain packages, not the REPL loop.
+- Reuse shared cache utilities for network-backed behavior.
+- Preserve user-facing output format unless intentionally changing UX and tests together.

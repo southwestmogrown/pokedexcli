@@ -1,9 +1,9 @@
 package locations
 
 import (
-    "encoding/json"
-    "strings"
-    "testing"
+	"encoding/json"
+	"strings"
+	"testing"
 )
 
 func TestInspectRequiresArgument(t *testing.T) {

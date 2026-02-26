@@ -26,7 +26,7 @@ func captureCommandOutput(f func()) string {
 func TestGetCommandsIncludesAllCommands(t *testing.T) {
     commandMap := GetCommands()
 
-    expected := []string{"help", "exit", "map", "mapb", "explore", "catch", "inspect"}
+    expected := []string{"help", "exit", "map", "mapb", "explore", "catch", "inspect", "pokedex"}
     for _, name := range expected {
         cmd, ok := commandMap[name]
         if !ok {
@@ -55,13 +55,19 @@ func TestHelpCommand(t *testing.T) {
     if !strings.Contains(out, "Available commands:") {
         t.Fatalf("help output missing header: %s", out)
     }
-    for _, name := range []string{"help", "exit", "map", "mapb", "explore", "catch", "inspect"} {
+    for _, name := range []string{"help", "exit", "map", "mapb", "explore", "catch", "inspect", "pokedex"} {
         if !strings.Contains(out, name) {
             t.Fatalf("help output missing %q: %s", name, out)
         }
     }
     if !strings.Contains(out, "explore <location-area-name-or-id>") {
         t.Fatalf("help output missing explore usage example: %s", out)
+    }
+    if !strings.Contains(out, "catch <pokemon-name-or-id>") {
+        t.Fatalf("help output missing catch usage example: %s", out)
+    }
+    if !strings.Contains(out, "inspect <pokemon-name>") {
+        t.Fatalf("help output missing inspect usage example: %s", out)
     }
 }
 

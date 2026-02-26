@@ -1,8 +1,8 @@
 package locations
 
 import (
-    "errors"
-    "fmt"
+	"errors"
+	"fmt"
 )
 
 // Inspect prints details for a previously-caught pokemon.

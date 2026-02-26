@@ -8,5 +8,7 @@ func commandHelp(args []string) error {
         fmt.Printf(" - %s: %s\n", cmd.Name, cmd.Description)
     }
     fmt.Println("Usage: explore <location-area-name-or-id> (e.g. explore canalave-city-area)")
+    fmt.Println("Usage: catch <pokemon-name-or-id> (e.g. catch pidgey)")
+    fmt.Println("Usage: inspect <pokemon-name> (e.g. inspect pidgey)")
     return nil
 }

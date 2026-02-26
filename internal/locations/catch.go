@@ -1,12 +1,12 @@
 package locations
 
 import (
-    "bytes"
-    "encoding/json"
-    "errors"
-    "fmt"
-    "math/rand"
-    "net/url"
+	"bytes"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"math/rand"
+	"net/url"
 )
 
 var pokemonBaseURL = "https://pokeapi.co/api/v2/pokemon"
@@ -16,6 +16,9 @@ var randIntn = rand.Intn
 
 // userPokedex stores captured pokemon keyed by pokemon name.
 var userPokedex = map[string]Pokemon{}
+
+// pokedexOrder keeps deterministic insertion order for listing in the pokedex command.
+var pokedexOrder []string
 
 // Pokemon contains data returned from the pokemon endpoint.
 type Pokemon struct {
@@ -69,8 +72,12 @@ func Catch(args []string) error {
         return nil
     }
 
+    if _, exists := userPokedex[pokemon.Name]; !exists {
+        pokedexOrder = append(pokedexOrder, pokemon.Name)
+    }
     userPokedex[pokemon.Name] = pokemon
     fmt.Printf("%s was caught!\n", pokemon.Name)
+    fmt.Println("You may now inspect it with the inspect command.")
     return nil
 }
 
@@ -91,6 +98,7 @@ func canCatchPokemon(baseExperience int) bool {
 // ResetPokedex clears captured pokemon state (primarily for tests).
 func ResetPokedex() {
     userPokedex = map[string]Pokemon{}
+    pokedexOrder = nil
 }
 
 // GetPokedex returns a copy of the current captured pokemon map.

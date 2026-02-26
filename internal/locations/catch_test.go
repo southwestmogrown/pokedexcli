@@ -1,11 +1,11 @@
 package locations
 
 import (
-    "fmt"
-    "net/http"
-    "net/http/httptest"
-    "strings"
-    "testing"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
 )
 
 func TestCatchRequiresArgument(t *testing.T) {
@@ -68,6 +68,9 @@ func TestCatchEscapeThenCatch(t *testing.T) {
     }
     if !strings.Contains(out2, "pikachu was caught!") {
         t.Fatalf("expected caught output on second attempt: %s", out2)
+    }
+    if !strings.Contains(out2, "You may now inspect it with the inspect command.") {
+        t.Fatalf("missing inspect hint after successful catch: %s", out2)
     }
 
     pokedex := GetPokedex()
